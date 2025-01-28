@@ -11,20 +11,16 @@ import com.sendgrid.helpers.mail.objects.Content;
 import com.sendgrid.helpers.mail.objects.Email;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Service;
+import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
 
-@Service
-public class EmailService {
+public class SendGridEmailService implements IEmailService {
 
-    private static final Logger LOG = LoggerFactory.getLogger(EmailService.class);
+    private static final Logger LOG = LoggerFactory.getLogger(SendGridEmailService.class);
 
-    private final SendGrid sendGrid;
-
-    public EmailService(SendGrid sendGrid) {
-        this.sendGrid = sendGrid;
-    }
+    @Autowired
+    private SendGrid sendGrid;
 
     public void sendEmail(EmailDto emailDto) {
         Email from = new Email(emailDto.getFromEmail(), emailDto.getFromName());
@@ -41,9 +37,6 @@ public class EmailService {
             LOG.info("Sending email to: {}", emailDto.getTo());
             Response response = sendGrid.api(request);
             if (response.getStatusCode() >= 400) {
-                LOG.error("Error sending email to: {}", emailDto.getTo());
-                LOG.error("Response code: {}", response.getStatusCode());
-                LOG.error("Response body: {}", response.getBody());
                 throw new EmailException(response.getBody());
             }
             LOG.info("Email sent successfully to: {}", emailDto.getTo());
