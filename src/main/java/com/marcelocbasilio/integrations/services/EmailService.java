@@ -1,6 +1,7 @@
 package com.marcelocbasilio.integrations.services;
 
 import com.marcelocbasilio.integrations.dto.EmailDto;
+import com.marcelocbasilio.integrations.services.exceptions.EmailException;
 import com.sendgrid.Method;
 import com.sendgrid.Request;
 import com.sendgrid.Response;
@@ -10,7 +11,6 @@ import com.sendgrid.helpers.mail.objects.Content;
 import com.sendgrid.helpers.mail.objects.Email;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -20,8 +20,11 @@ public class EmailService {
 
     private static final Logger LOG = LoggerFactory.getLogger(EmailService.class);
 
-    @Autowired
-    private SendGrid sendGrid;
+    private final SendGrid sendGrid;
+
+    public EmailService(SendGrid sendGrid) {
+        this.sendGrid = sendGrid;
+    }
 
     public void sendEmail(EmailDto emailDto) {
         Email from = new Email(emailDto.getFromEmail(), emailDto.getFromName());
@@ -41,13 +44,14 @@ public class EmailService {
                 LOG.error("Error sending email to: {}", emailDto.getTo());
                 LOG.error("Response code: {}", response.getStatusCode());
                 LOG.error("Response body: {}", response.getBody());
-            } else {
-                LOG.info("Email sent successfully to: {}", emailDto.getTo());
-                LOG.info("Response code: {}", response.getStatusCode());
-                LOG.info("Response body: {}", response.getBody());
+                throw new EmailException(response.getBody());
             }
+            LOG.info("Email sent successfully to: {}", emailDto.getTo());
+            LOG.info("Response code: {}", response.getStatusCode());
+            LOG.info("Response body: {}", response.getBody());
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("Error sending email to: {}", e.getMessage());
+            throw new EmailException(e.getMessage());
         }
     }
 }
